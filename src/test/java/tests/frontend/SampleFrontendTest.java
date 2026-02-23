@@ -23,7 +23,7 @@ public class SampleFrontendTest extends BaseFrontendTest {
         log.info("Page title: {}", title);
 
         getExtentTest().info("Verifying page title contains 'Google'. Actual: " + title);
-        Assert.assertTrue(title.contains("Google"),
+        Assert.assertTrue(title.contains("Googleedd"),
                 "Expected page title to contain 'Google' but was: " + title);
     }
 

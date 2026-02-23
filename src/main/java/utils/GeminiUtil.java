@@ -63,7 +63,8 @@ public class GeminiUtil {
                 }
             }
         }
-        // This part should technically be unreachable, but good practice to include a final throw
+        // This part should technically be unreachable, but good practice to include a
+        // final throw
         throw new RuntimeException("Unexpected error: Gemini API call logic did not return or throw.");
     }
 

@@ -106,6 +106,17 @@ public class WebDriverFacade {
         getDriver().get(url);
     }
 
+    /**
+     * Returns the current URL of the page the driver is on.
+     *
+     * @return the current URL as a String
+     */
+    public static String getCurrentUrl() {
+        String currentUrl = getDriver().getCurrentUrl();
+        log.debug("Current URL: {}", currentUrl);
+        return currentUrl;
+    }
+
     // =========================================================================
     // Element interactions
     // =========================================================================

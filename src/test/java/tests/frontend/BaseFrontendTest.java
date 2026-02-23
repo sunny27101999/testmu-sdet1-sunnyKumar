@@ -7,6 +7,7 @@ import org.apache.logging.log4j.Logger;
 import org.testng.ITestResult;
 import org.testng.annotations.*;
 import utils.ConfigReader;
+import utils.GeminiUtil; // Import GeminiUtil
 import utils.LoggerUtil;
 import webDriver.WebDriverBuilder;
 import webDriver.WebDriverFacade;
@@ -51,7 +52,7 @@ public class BaseFrontendTest {
     @BeforeSuite(alwaysRun = true)
     public void setUpExtentReports() {
         String reportPath = System.getProperty("user.dir")
-                + "/target/extent-reports/ExtentReport.html";
+                + "/testReport/ExtentReport.html";
         ExtentSparkReporter htmlReporter = new ExtentSparkReporter(reportPath);
         htmlReporter.config().setReportName("UI Automation Report");
         htmlReporter.config().setDocumentTitle("Test Execution Report");
@@ -124,6 +125,32 @@ public class BaseFrontendTest {
                     if (screenshotPath != null) {
                         extentTest.addScreenCaptureFromPath(screenshotPath,
                                 "Failure Screenshot");
+                    }
+
+                    // --- LLM Integration for Frontend Failure ---
+                    try {
+                        String testName = result.getName();
+                        String errorMessage = result.getThrowable() != null ? result.getThrowable().getMessage()
+                                : "No error message.";
+                        String currentUrl = WebDriverFacade.getCurrentUrl(); // Get current URL
+
+                        String prompt = String.format(
+                                "The UI test '%s' failed. " +
+                                        "Error message: %s. " +
+                                        "Current URL: %s. " +
+                                        "A screenshot was captured. " +
+                                        "Please provide a plain English explanation of what likely broke and suggest a fix.",
+                                testName, errorMessage, currentUrl);
+
+                        log.info("Calling Gemini LLM for explanation for test: {}", testName);
+                        String llmExplanation = GeminiUtil.generateContent(prompt);
+                        extentTest.info("<b>LLM Analysis:</b><br>" + llmExplanation);
+                        log.info("Gemini LLM explanation received for test: {}", testName);
+                    } catch (Exception e) {
+                        log.error("Failed to get LLM explanation for frontend test failure: {}", e.getMessage());
+                        if (extentTest != null) {
+                            extentTest.info("LLM Analysis could not be generated due to an error: " + e.getMessage());
+                        }
                     }
                 }
                 break;
