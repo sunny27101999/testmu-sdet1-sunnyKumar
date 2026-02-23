@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Configuration status="WARN" monitorInterval="30">
+
+  <Properties>
+    <Property name="logDir">${sys:user.dir}/target/logs</Property>
+    <Property name="logPattern">%d{yyyy-MM-dd HH:mm:ss.SSS} [%t] %-5level %logger{36} - %msg%n</Property>
+    <Property name="logFile">automation</Property>
+  </Properties>
+
+  <Appenders>
+
+    <!-- Console appender — coloured output in the terminal -->
+    <Console name="ConsoleAppender" target="SYSTEM_OUT">
+      <PatternLayout pattern="${logPattern}"/>
+    </Console>
+
+    <!-- Rolling file appender — rotates daily or when size > 10 MB -->
+    <RollingFile name="FileAppender"
+                 fileName="${logDir}/${logFile}.log"
+                 filePattern="${logDir}/${logFile}-%d{yyyy-MM-dd}-%i.log.gz">
+      <PatternLayout pattern="${logPattern}"/>
+      <Policies>
+        <TimeBasedTriggeringPolicy/>
+        <SizeBasedTriggeringPolicy size="10MB"/>
+      </Policies>
+      <DefaultRolloverStrategy max="5"/>
+    </RollingFile>
+
+  </Appenders>
+
+  <Loggers>
+    <!-- Suppress noisy third-party libraries -->
+    <Logger name="io.github.bonigarcia"       level="WARN"  additivity="false"><AppenderRef ref="ConsoleAppender"/></Logger>
+    <Logger name="org.openqa.selenium"         level="WARN"  additivity="false"><AppenderRef ref="ConsoleAppender"/></Logger>
+    <Logger name="io.restassured"              level="WARN"  additivity="false"><AppenderRef ref="ConsoleAppender"/></Logger>
+    <Logger name="com.aventstack.extentreports" level="WARN" additivity="false"><AppenderRef ref="ConsoleAppender"/></Logger>
+
+    <!-- Root logger — INFO to console and file -->
+    <Root level="INFO">
+      <AppenderRef ref="ConsoleAppender"/>
+      <AppenderRef ref="FileAppender"/>
+    </Root>
+  </Loggers>
+
+</Configuration>
