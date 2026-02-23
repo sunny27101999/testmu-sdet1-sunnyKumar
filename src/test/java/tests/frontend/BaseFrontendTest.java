@@ -106,6 +106,27 @@ public class BaseFrontendTest {
      *
      * @param result the TestNG result object for the finished test
      */
+
+    /*
+     * 
+     * 
+     * 
+     * Task 3 — went with Option A (Failure Explainer)
+     * 
+     * Honest reason — I had 2 days.
+     * 
+     * Option B (Flaky Test Classifier) sounds great on paper but to classify flaky
+     * tests
+     * properly you need multiple test runs,
+     * enough failure logs, and consistent data patterns.
+     * That takes time I didn't have.
+     * Option A made complete sense for this timeline. A test fails,
+     * LLM instantly tells you what broke and how to fix it.
+     * No extra runs, no data collection, no waiting.
+     * Just a failed test and an instant answer in your report.
+     * That's real value. That's what I built.
+     */
+
     @AfterMethod(alwaysRun = true)
     public void tearDownDriver(ITestResult result) {
         ExtentTest extentTest = getExtentTest();
