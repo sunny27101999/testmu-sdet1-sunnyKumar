@@ -1,0 +1,431 @@
+{
+  "module": "Dashboard Module",
+  "version": "2.0",
+  "created_by": "QA Engineer",
+  "created_date": "2026-02-23",
+  "revision_note": "Optimized from v1.0 — removed redundant cases, merged overlapping scenarios, focused on quality over count.",
+  "total_test_cases": 17,
+  "test_suites": [
+    {
+      "suite_id": "TS-001",
+      "suite_name": "Widget Loading",
+      "description": "Covers widget rendering across normal, slow, failed, and empty data conditions.",
+      "test_cases": [
+        {
+          "test_id": "TC-001",
+          "title": "All widgets render successfully on initial load and after page refresh",
+          "priority": "Critical",
+          "type": "Positive",
+          "preconditions": [
+            "User is logged in with Admin role",
+            "All backend APIs are operational"
+          ],
+          "steps": [
+            "Navigate to the Dashboard",
+            "Observe all widgets and confirm they render within 3 seconds",
+            "Press F5 to refresh the page",
+            "Observe all widgets again"
+          ],
+          "test_data": {
+            "user_role": "Admin",
+            "expected_widgets": ["Sales Summary", "Revenue Chart", "User Activity", "Recent Orders", "KPI Cards"],
+            "max_load_time_seconds": 3
+          },
+          "expected_result": "All widgets fully render on both initial load and after refresh. No blank panels, stale data, or error states are visible.",
+          "actual_result": "",
+          "status": "Not Executed"
+        },
+        {
+          "test_id": "TC-002",
+          "title": "Widget shows loading state on slow network, error state on API failure, and recovers on retry",
+          "priority": "Critical",
+          "type": "Negative",
+          "preconditions": [
+            "User is on the dashboard",
+            "Ability to throttle network and mock API responses"
+          ],
+          "steps": [
+            "Throttle network to Slow 3G — confirm each widget shows a skeleton/spinner during fetch",
+            "Simulate a 500 error on the 'Sales Summary' API",
+            "Confirm the failed widget shows an isolated error message and all other widgets load normally",
+            "Restore the API and click 'Retry' on the failed widget",
+            "Confirm the widget recovers and displays data correctly"
+          ],
+          "test_data": {
+            "network_throttle": "Slow 3G",
+            "simulated_api_error": { "widget": "Sales Summary", "http_code": 500 }
+          },
+          "expected_result": "Widgets show spinners on slow load. A single widget failure shows an isolated error with a Retry option — other widgets are unaffected. Retry successfully reloads the widget.",
+          "actual_result": "",
+          "status": "Not Executed"
+        },
+        {
+          "test_id": "TC-003",
+          "title": "Widget displays empty state message when API returns no data",
+          "priority": "Medium",
+          "type": "Functional",
+          "preconditions": [
+            "API for 'Recent Orders' widget is mocked to return an empty array"
+          ],
+          "steps": [
+            "Navigate to the dashboard",
+            "Locate the 'Recent Orders' widget and observe its state"
+          ],
+          "test_data": {
+            "widget": "Recent Orders",
+            "api_response": []
+          },
+          "expected_result": "Widget renders a clear empty state UI (e.g., 'No data available') instead of a blank panel or runtime error.",
+          "actual_result": "",
+          "status": "Not Executed"
+        }
+      ]
+    },
+    {
+      "suite_id": "TS-002",
+      "suite_name": "Data Accuracy",
+      "description": "Covers correctness of KPI values, chart data points, percentage calculations, and real-time updates.",
+      "test_cases": [
+        {
+          "test_id": "TC-004",
+          "title": "KPI values, percentage changes, and chart data points match database records",
+          "priority": "Critical",
+          "type": "Functional",
+          "preconditions": [
+            "User is on the dashboard",
+            "Direct database access is available for verification"
+          ],
+          "steps": [
+            "Record all KPI card values: Total Revenue, Total Users, Orders Today, Conversion Rate",
+            "Record percentage change indicators on each KPI card (e.g., '+12% vs last month')",
+            "Hover over data points on Revenue Chart and User Activity Chart and note tooltip values",
+            "Query the database for the same metrics and time intervals",
+            "Compare all dashboard values against database results"
+          ],
+          "test_data": {
+            "kpi_cards": ["Total Revenue", "Total Users", "Orders Today", "Conversion Rate"],
+            "charts": ["Revenue Chart", "User Activity Chart"],
+            "comparison_period": "Last Month"
+          },
+          "expected_result": "All KPI values, percentage changes, and individual chart data points exactly match the database. No rounding errors or calculation discrepancies.",
+          "actual_result": "",
+          "status": "Not Executed"
+        },
+        {
+          "test_id": "TC-005",
+          "title": "Dashboard reflects a newly created record in real-time without requiring re-login",
+          "priority": "High",
+          "type": "Functional",
+          "preconditions": [
+            "User is on the dashboard with 'Orders Today' KPI and 'Recent Orders' widget visible"
+          ],
+          "steps": [
+            "Note the current 'Orders Today' count and top entry in 'Recent Orders'",
+            "Create a new order via the Orders module",
+            "Return to the dashboard and refresh (or wait for real-time update)",
+            "Observe both the 'Orders Today' KPI and the 'Recent Orders' widget"
+          ],
+          "test_data": {
+            "kpi_card": "Orders Today",
+            "widget": "Recent Orders"
+          },
+          "expected_result": "'Orders Today' increments by 1. The new order appears at the top of the 'Recent Orders' widget. No re-login is required.",
+          "actual_result": "",
+          "status": "Not Executed"
+        }
+      ]
+    },
+    {
+      "suite_id": "TS-003",
+      "suite_name": "Filter and Sort Behavior",
+      "description": "Covers preset and custom date range filters, stacked filters, column sorting, reset, and filter persistence.",
+      "test_cases": [
+        {
+          "test_id": "TC-006",
+          "title": "Preset date range filter updates all dependent widgets with accurate data",
+          "priority": "Critical",
+          "type": "Functional",
+          "preconditions": [
+            "User is on the dashboard",
+            "Data exists across multiple date ranges"
+          ],
+          "steps": [
+            "Select 'Last 7 Days' from the date range filter",
+            "Verify all widgets reflect data for the last 7 days only and match database",
+            "Switch to 'Last 30 Days' and repeat the verification"
+          ],
+          "test_data": {
+            "filter_options_tested": ["Last 7 Days", "Last 30 Days"]
+          },
+          "expected_result": "Each widget updates correctly on filter change. Data is strictly scoped to the selected period and matches the database query for that period.",
+          "actual_result": "",
+          "status": "Not Executed"
+        },
+        {
+          "test_id": "TC-007",
+          "title": "Custom date range applies correctly and rejects an invalid range (start after end)",
+          "priority": "High",
+          "type": "Functional",
+          "preconditions": [
+            "User is on the dashboard with Custom Range filter available"
+          ],
+          "steps": [
+            "Select 'Custom Range', set start: 2026-02-01, end: 2026-02-15, and apply",
+            "Verify widgets show data only within Feb 1–15 and match the database",
+            "Now set start: 2026-02-20, end: 2026-02-10 (start after end) and attempt to apply"
+          ],
+          "test_data": {
+            "valid_range": { "start_date": "2026-02-01", "end_date": "2026-02-15" },
+            "invalid_range": { "start_date": "2026-02-20", "end_date": "2026-02-10" }
+          },
+          "expected_result": "Valid range applies correctly — widgets show Feb 1–15 data only. Invalid range is rejected with: 'Start date cannot be after end date.' No widgets update.",
+          "actual_result": "",
+          "status": "Not Executed"
+        },
+        {
+          "test_id": "TC-008",
+          "title": "Stacked filters (date + region) narrow data correctly and stack without conflict",
+          "priority": "High",
+          "type": "Functional",
+          "preconditions": [
+            "Dashboard has both date range and region filters",
+            "Data exists for multiple regions and time periods"
+          ],
+          "steps": [
+            "Set date range to 'Last 30 Days'",
+            "Set region filter to 'North America'",
+            "Observe all widget data",
+            "Cross-check against database for North America records in the last 30 days"
+          ],
+          "test_data": {
+            "date_filter": "Last 30 Days",
+            "region_filter": "North America"
+          },
+          "expected_result": "Widgets display data for North America in the last 30 days only. Both filters apply simultaneously. Result matches the database query with both conditions.",
+          "actual_result": "",
+          "status": "Not Executed"
+        },
+        {
+          "test_id": "TC-009",
+          "title": "Column sorting on 'Recent Orders' toggles correctly and filters persist across navigation",
+          "priority": "High",
+          "type": "Functional",
+          "preconditions": [
+            "Recent Orders widget is visible with at least 10 records",
+            "Date and region filters are applied"
+          ],
+          "steps": [
+            "Click 'Date' column header — verify descending order (newest first)",
+            "Click 'Date' again — verify ascending order (oldest first)",
+            "Click 'Amount' column header — verify ascending order (lowest first)",
+            "Navigate to Reports module and return to the dashboard",
+            "Verify all previously applied filters (date, region) are still active"
+          ],
+          "test_data": {
+            "widget": "Recent Orders",
+            "columns_tested": ["Date", "Amount"]
+          },
+          "expected_result": "Sort toggles correctly between ASC and DESC on each click. Sorted order matches the database. Applied filters persist after navigation.",
+          "actual_result": "",
+          "status": "Not Executed"
+        },
+        {
+          "test_id": "TC-010",
+          "title": "Reset filter clears all active filters and restores the dashboard to its default state",
+          "priority": "Medium",
+          "type": "Functional",
+          "preconditions": [
+            "User has applied 'Last 30 Days' and 'North America' filters"
+          ],
+          "steps": [
+            "Confirm widgets show filtered data",
+            "Click 'Reset Filters' or 'Clear All'",
+            "Observe the dashboard state and widget data"
+          ],
+          "test_data": {
+            "filters_to_reset": ["Last 30 Days", "North America"]
+          },
+          "expected_result": "All filters are cleared. The dashboard reverts to defaults (e.g., 'Today', 'All Regions') and all widgets reload with the default dataset.",
+          "actual_result": "",
+          "status": "Not Executed"
+        }
+      ]
+    },
+    {
+      "suite_id": "TS-004",
+      "suite_name": "Responsive Layout",
+      "description": "Covers layout integrity across device breakpoints, chart scaling, and keyboard accessibility.",
+      "test_cases": [
+        {
+          "test_id": "TC-011",
+          "title": "Dashboard layout adapts correctly across all standard breakpoints with no horizontal scroll",
+          "priority": "High",
+          "type": "UI",
+          "preconditions": [
+            "Browser devtools or real devices available for viewport simulation"
+          ],
+          "steps": [
+            "Open dashboard at 1920x1080 — verify multi-column grid, no overflow",
+            "Resize to 1366x768 — verify graceful column reduction",
+            "Resize to 768x1024 — verify 1-2 column stacking and touch-friendly controls",
+            "Resize to 375x812 — verify single-column layout and legible text",
+            "At each breakpoint, confirm no horizontal scrollbar appears"
+          ],
+          "test_data": {
+            "breakpoints": [
+              { "label": "Desktop", "resolution": "1920x1080" },
+              { "label": "Laptop", "resolution": "1366x768" },
+              { "label": "Tablet", "resolution": "768x1024" },
+              { "label": "Mobile", "resolution": "375x812" }
+            ]
+          },
+          "expected_result": "Layout adapts correctly at all breakpoints. Widgets stack appropriately, no content overflows, no horizontal scroll appears, and all text remains legible.",
+          "actual_result": "",
+          "status": "Not Executed"
+        },
+        {
+          "test_id": "TC-012",
+          "title": "Charts scale correctly on mobile and dashboard is fully keyboard navigable on desktop",
+          "priority": "Medium",
+          "type": "UI/Accessibility",
+          "preconditions": [
+            "Dashboard is accessible on a 375px mobile viewport and a desktop browser"
+          ],
+          "steps": [
+            "On 375px viewport, verify Revenue Chart and User Activity Chart resize without clipping, overflow, or unreadable axis labels",
+            "Switch to desktop, use Tab key to navigate all interactive elements (filters, dropdowns, buttons)",
+            "Confirm visible focus indicators on each element and no keyboard traps exist",
+            "Use Enter/Space to activate controls and arrow keys for dropdown navigation"
+          ],
+          "test_data": {
+            "mobile_viewport": "375x812",
+            "charts_verified": ["Revenue Chart", "User Activity Chart"]
+          },
+          "expected_result": "Charts scale and render legibly on mobile. All interactive elements on desktop are keyboard-accessible with clear focus states and no traps.",
+          "actual_result": "",
+          "status": "Not Executed"
+        }
+      ]
+    },
+    {
+      "suite_id": "TS-005",
+      "suite_name": "Permission-Based Visibility",
+      "description": "Covers widget visibility by role, data scoping, backend API enforcement, and permission change propagation.",
+      "test_cases": [
+        {
+          "test_id": "TC-013",
+          "title": "Widget visibility is correctly scoped per role (Admin, Manager, Standard User, Viewer)",
+          "priority": "Critical",
+          "type": "Security",
+          "preconditions": [
+            "Test accounts exist for each role: Admin, Manager, Standard User, Viewer"
+          ],
+          "steps": [
+            "Log in as Admin — verify all widgets including privileged ones (System Health, User Management Stats) are visible",
+            "Log in as Manager — verify only team-scoped widgets and data are shown; no company-wide metrics",
+            "Log in as Standard User — verify admin-only widgets (System Health, Revenue Chart) are hidden",
+            "Log in as Viewer — verify only public widgets (Public Announcements, Company Overview) are shown"
+          ],
+          "test_data": {
+            "roles": [
+              { "role": "Admin", "expected_visible": ["Sales Summary", "Revenue Chart", "System Health", "User Management Stats"] },
+              { "role": "Manager", "expected_scope": "Team-level data only, no company-wide metrics" },
+              { "role": "Standard User", "expected_hidden": ["System Health", "Revenue Chart"] },
+              { "role": "Viewer", "expected_visible": ["Public Announcements", "Company Overview Stats"] }
+            ]
+          },
+          "expected_result": "Each role sees only the widgets and data it is authorized to view. No role can access widgets or metrics above their permission level.",
+          "actual_result": "",
+          "status": "Not Executed"
+        },
+        {
+          "test_id": "TC-014",
+          "title": "Restricted widget API returns 403 on direct access attempt by an unauthorized user",
+          "priority": "Critical",
+          "type": "Security",
+          "preconditions": [
+            "Standard User is logged in",
+            "Admin-only API endpoint is known"
+          ],
+          "steps": [
+            "As Standard User, make a direct GET request to /api/dashboard/system-health via Postman or browser devtools",
+            "Observe the HTTP response code and body"
+          ],
+          "test_data": {
+            "user_role": "Standard User",
+            "restricted_endpoint": "/api/dashboard/system-health"
+          },
+          "expected_result": "API returns HTTP 403 Forbidden with no data payload. Backend enforces access control independently of the UI.",
+          "actual_result": "",
+          "status": "Not Executed"
+        },
+        {
+          "test_id": "TC-015",
+          "title": "Permission grant and revocation reflect on the dashboard after refresh without re-login",
+          "priority": "High",
+          "type": "Security",
+          "preconditions": [
+            "Standard User is logged in without access to 'Revenue Chart'",
+            "Admin session is available in a separate browser"
+          ],
+          "steps": [
+            "Confirm 'Revenue Chart' is not visible for Standard User",
+            "Admin grants 'Revenue Chart' access — Standard User refreshes — verify widget appears",
+            "Admin revokes the access — Standard User refreshes — verify widget disappears"
+          ],
+          "test_data": {
+            "user_role": "Standard User",
+            "widget": "Revenue Chart"
+          },
+          "expected_result": "Both grant and revocation of widget access are enforced on the next page refresh without requiring the user to log out. No stale permissions persist.",
+          "actual_result": "",
+          "status": "Not Executed"
+        },
+        {
+          "test_id": "TC-016",
+          "title": "Shared widget displays only the current user's own data — no cross-user data leakage",
+          "priority": "Critical",
+          "type": "Security",
+          "preconditions": [
+            "User A and User B both have access to the 'Recent Orders' widget",
+            "Each user has a distinct set of orders in the system"
+          ],
+          "steps": [
+            "Log in as User A — record orders displayed in 'Recent Orders'",
+            "Log out and log in as User B — observe the same widget",
+            "Verify no User A orders appear in User B's view"
+          ],
+          "test_data": {
+            "user_a": "usera@example.com",
+            "user_b": "userb@example.com",
+            "widget": "Recent Orders"
+          },
+          "expected_result": "Each user sees only their own records. No data from other users is exposed. Data isolation is enforced at the API level, not just the UI.",
+          "actual_result": "",
+          "status": "Not Executed"
+        },
+        {
+          "test_id": "TC-017",
+          "title": "Read-only user cannot modify widgets; zero-permission user sees a meaningful empty state",
+          "priority": "High",
+          "type": "Security",
+          "preconditions": [
+            "Read-Only user account and a zero-permission user account both exist"
+          ],
+          "steps": [
+            "Log in as Read-Only user — attempt to click any Edit or Configure button on widgets",
+            "Confirm all edit controls are hidden or disabled and no changes can be saved",
+            "Log out and log in as the zero-permission user",
+            "Navigate to the dashboard and observe the page"
+          ],
+          "test_data": {
+            "roles_tested": ["Read-Only", "No Permissions"]
+          },
+          "expected_result": "Read-Only user cannot modify any widget. Zero-permission user sees: 'No widgets available. Please contact your administrator to request access.' No blank or broken UI.",
+          "actual_result": "",
+          "status": "Not Executed"
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,619 @@
+{
+  "module": "Backend API Testing",
+  "version": "1.0",
+  "created_by": "QA Engineer",
+  "created_date": "2026-02-23",
+  "total_test_cases": 20,
+  "base_url": "https://api.example.com/v1",
+  "test_suites": [
+    {
+      "suite_id": "TS-001",
+      "suite_name": "Auth Token Validation",
+      "description": "Verifies that all protected endpoints correctly enforce authentication and handle token states — missing, invalid, expired, and role-based.",
+      "test_cases": [
+        {
+          "test_id": "TC-001",
+          "title": "Valid Bearer token grants access to a protected endpoint",
+          "priority": "Critical",
+          "type": "Positive",
+          "method": "GET",
+          "endpoint": "/users/me",
+          "preconditions": ["A valid, unexpired JWT token exists for an active user"],
+          "headers": {
+            "Authorization": "Bearer <valid_token>",
+            "Content-Type": "application/json"
+          },
+          "request_body": null,
+          "expected_response": {
+            "status_code": 200,
+            "body_contains": ["id", "email", "role"]
+          },
+          "expected_result": "HTTP 200 OK. Response body returns the authenticated user's profile data.",
+          "actual_result": "",
+          "status": "Not Executed"
+        },
+        {
+          "test_id": "TC-002",
+          "title": "Requests with missing, malformed, or expired token are all rejected with 401",
+          "priority": "Critical",
+          "type": "Negative",
+          "method": "GET",
+          "endpoint": "/users/me",
+          "preconditions": ["API requires Bearer token authentication"],
+          "scenarios": [
+            {
+              "label": "Missing token",
+              "headers": {},
+              "expected_status": 401,
+              "expected_error": "Authorization token is required"
+            },
+            {
+              "label": "Malformed token",
+              "headers": { "Authorization": "Bearer invalid.token.xyz" },
+              "expected_status": 401,
+              "expected_error": "Invalid token format"
+            },
+            {
+              "label": "Expired token",
+              "headers": { "Authorization": "Bearer <expired_token>" },
+              "expected_status": 401,
+              "expected_error": "Token has expired"
+            }
+          ],
+          "expected_result": "All three scenarios return HTTP 401 Unauthorized with a descriptive error. No user data is returned in any case.",
+          "actual_result": "",
+          "status": "Not Executed"
+        },
+        {
+          "test_id": "TC-003",
+          "title": "Role-based access control blocks lower-privilege users from restricted endpoints",
+          "priority": "Critical",
+          "type": "Security",
+          "method": "GET",
+          "endpoint": "/admin/users",
+          "preconditions": [
+            "Standard User token and Admin token both exist",
+            "Endpoint is restricted to Admin role only"
+          ],
+          "scenarios": [
+            {
+              "label": "Standard User accessing admin endpoint",
+              "headers": { "Authorization": "Bearer <standard_user_token>" },
+              "expected_status": 403,
+              "expected_error": "Insufficient permissions"
+            },
+            {
+              "label": "Admin accessing admin endpoint",
+              "headers": { "Authorization": "Bearer <admin_token>" },
+              "expected_status": 200,
+              "expected_error": null
+            }
+          ],
+          "expected_result": "Standard User receives HTTP 403 Forbidden. Admin receives HTTP 200 with data. Access is enforced at the API layer, not just the UI.",
+          "actual_result": "",
+          "status": "Not Executed"
+        },
+        {
+          "test_id": "TC-004",
+          "title": "Token invalidated after logout cannot be reused to access protected endpoints",
+          "priority": "High",
+          "type": "Security",
+          "method": "GET",
+          "endpoint": "/users/me",
+          "preconditions": [
+            "User is logged in with a valid token",
+            "POST /auth/logout has been called to invalidate the session"
+          ],
+          "steps": [
+            "Capture the active Bearer token before logout",
+            "Call POST /auth/logout with the token",
+            "Retry GET /users/me using the same captured token"
+          ],
+          "headers": { "Authorization": "Bearer <token_captured_before_logout>" },
+          "expected_response": {
+            "status_code": 401,
+            "body_contains": ["Token has been invalidated"]
+          },
+          "expected_result": "HTTP 401 Unauthorized. The token is blacklisted server-side and cannot be reused after logout.",
+          "actual_result": "",
+          "status": "Not Executed"
+        }
+      ]
+    },
+    {
+      "suite_id": "TS-002",
+      "suite_name": "CRUD Operations",
+      "description": "Verifies Create, Read, Update, and Delete operations covering happy paths, edge cases, data integrity, and authorization enforcement.",
+      "resource": "Product",
+      "test_cases": [
+        {
+          "test_id": "TC-005",
+          "title": "CREATE — POST /products returns 201 with valid payload and persists data correctly",
+          "priority": "Critical",
+          "type": "Positive",
+          "method": "POST",
+          "endpoint": "/products",
+          "preconditions": ["User is authenticated with Admin role"],
+          "headers": {
+            "Authorization": "Bearer <admin_token>",
+            "Content-Type": "application/json"
+          },
+          "request_body": {
+            "name": "Wireless Keyboard",
+            "price": 49.99,
+            "category": "Electronics",
+            "stock": 100
+          },
+          "expected_response": {
+            "status_code": 201,
+            "body_contains": ["id", "name", "price", "category", "stock", "created_at"]
+          },
+          "post_checks": [
+            "GET /products/{id} returns the newly created product with matching data",
+            "Database record matches the request payload exactly"
+          ],
+          "expected_result": "HTTP 201 Created. Response includes a generated ID and all submitted fields. A subsequent GET confirms data persistence.",
+          "actual_result": "",
+          "status": "Not Executed"
+        },
+        {
+          "test_id": "TC-006",
+          "title": "READ — GET /products returns paginated list; GET /products/{id} returns correct record or 404",
+          "priority": "Critical",
+          "type": "Positive/Negative",
+          "preconditions": [
+            "At least 15 products exist in the system",
+            "User is authenticated"
+          ],
+          "scenarios": [
+            {
+              "label": "List all products with pagination",
+              "method": "GET",
+              "endpoint": "/products?page=1&limit=10",
+              "expected_status": 200,
+              "expected_body_fields": ["data", "total", "page", "limit"]
+            },
+            {
+              "label": "Get a single product by valid ID",
+              "method": "GET",
+              "endpoint": "/products/{valid_id}",
+              "expected_status": 200,
+              "expected_body_fields": ["id", "name", "price", "category", "stock"]
+            },
+            {
+              "label": "Get a product with a non-existent ID",
+              "method": "GET",
+              "endpoint": "/products/99999999",
+              "expected_status": 404,
+              "expected_error": "Product not found"
+            }
+          ],
+          "expected_result": "Paginated list returns correct structure with 10 records. Single record returns the correct product. Non-existent ID returns HTTP 404 with a clear error.",
+          "actual_result": "",
+          "status": "Not Executed"
+        },
+        {
+          "test_id": "TC-007",
+          "title": "UPDATE — PUT replaces all fields; PATCH updates only the specified field",
+          "priority": "Critical",
+          "type": "Positive",
+          "preconditions": [
+            "A product with a known ID exists",
+            "User is authenticated with Admin role"
+          ],
+          "scenarios": [
+            {
+              "label": "Full update with PUT",
+              "method": "PUT",
+              "endpoint": "/products/{valid_id}",
+              "request_body": { "name": "Updated Keyboard", "price": 59.99, "category": "Electronics", "stock": 80 },
+              "expected_status": 200,
+              "post_check": "All fields in GET /products/{id} match the PUT payload exactly"
+            },
+            {
+              "label": "Partial update with PATCH",
+              "method": "PATCH",
+              "endpoint": "/products/{valid_id}",
+              "request_body": { "price": 39.99 },
+              "expected_status": 200,
+              "post_check": "Only 'price' is updated; all other fields remain unchanged"
+            }
+          ],
+          "expected_result": "PUT replaces all fields. PATCH updates only the specified field. A subsequent GET confirms the correct state in both cases.",
+          "actual_result": "",
+          "status": "Not Executed"
+        },
+        {
+          "test_id": "TC-008",
+          "title": "DELETE — removes the record; repeated delete on same ID returns 404",
+          "priority": "Critical",
+          "type": "Positive/Negative",
+          "method": "DELETE",
+          "preconditions": [
+            "A product with a known ID exists",
+            "User is authenticated with Admin role"
+          ],
+          "steps": [
+            "Send DELETE /products/{valid_id} — expect HTTP 200 or 204",
+            "Send GET /products/{valid_id} — expect HTTP 404 confirming deletion",
+            "Send DELETE /products/{valid_id} again — expect HTTP 404 (idempotency check)"
+          ],
+          "expected_response": {
+            "first_delete_status": "200 or 204",
+            "get_after_delete_status": 404,
+            "second_delete_status": 404
+          },
+          "expected_result": "First DELETE succeeds. GET confirms removal with 404. Second DELETE returns 404, confirming correct idempotent behavior.",
+          "actual_result": "",
+          "status": "Not Executed"
+        },
+        {
+          "test_id": "TC-009",
+          "title": "All CRUD write operations are blocked for unauthenticated and unauthorized users",
+          "priority": "High",
+          "type": "Security",
+          "preconditions": [
+            "A product with a known ID exists",
+            "Standard User token and an unauthenticated state are both available"
+          ],
+          "scenarios": [
+            {
+              "label": "POST without auth token",
+              "method": "POST",
+              "endpoint": "/products",
+              "headers": {},
+              "expected_status": 401
+            },
+            {
+              "label": "DELETE by Standard User (no delete permission)",
+              "method": "DELETE",
+              "endpoint": "/products/{valid_id}",
+              "headers": { "Authorization": "Bearer <standard_user_token>" },
+              "expected_status": 403
+            }
+          ],
+          "expected_result": "Unauthenticated requests return HTTP 401. Authenticated but unauthorized requests return HTTP 403. No data is modified in either case.",
+          "actual_result": "",
+          "status": "Not Executed"
+        }
+      ]
+    },
+    {
+      "suite_id": "TS-003",
+      "suite_name": "Error Handling (4xx / 5xx)",
+      "description": "Verifies that the API returns correct, consistent, and descriptive error responses for all client-side and server-side failures.",
+      "test_cases": [
+        {
+          "test_id": "TC-010",
+          "title": "400 / 415 — API rejects malformed JSON body and unsupported Content-Type",
+          "priority": "High",
+          "type": "Negative",
+          "method": "POST",
+          "endpoint": "/products",
+          "preconditions": ["User is authenticated with Admin role"],
+          "scenarios": [
+            {
+              "label": "Malformed JSON body",
+              "headers": { "Authorization": "Bearer <admin_token>", "Content-Type": "application/json" },
+              "request_body_raw": "{ name: 'Missing quotes', price: }",
+              "expected_status": 400,
+              "expected_error": "Invalid JSON format"
+            },
+            {
+              "label": "Unsupported Content-Type (text/plain)",
+              "headers": { "Authorization": "Bearer <admin_token>", "Content-Type": "text/plain" },
+              "request_body": "name=Keyboard&price=49",
+              "expected_status": 415,
+              "expected_error": "Unsupported Media Type"
+            }
+          ],
+          "expected_result": "HTTP 400 for malformed JSON. HTTP 415 for unsupported Content-Type. Both return clear, structured error messages.",
+          "actual_result": "",
+          "status": "Not Executed"
+        },
+        {
+          "test_id": "TC-011",
+          "title": "404 / 405 — correct errors for non-existent resource, unknown route, and wrong HTTP method",
+          "priority": "High",
+          "type": "Negative",
+          "preconditions": ["User is authenticated"],
+          "scenarios": [
+            {
+              "label": "Non-existent resource ID",
+              "method": "GET",
+              "endpoint": "/products/00000000",
+              "expected_status": 404,
+              "expected_error": "Product not found"
+            },
+            {
+              "label": "Unknown API route",
+              "method": "GET",
+              "endpoint": "/nonexistent-route",
+              "expected_status": 404,
+              "expected_error": "Route not found"
+            },
+            {
+              "label": "Unsupported method on endpoint",
+              "method": "DELETE",
+              "endpoint": "/auth/login",
+              "expected_status": 405,
+              "expected_headers": { "Allow": "POST" },
+              "expected_error": "Method Not Allowed"
+            }
+          ],
+          "expected_result": "HTTP 404 for unknown resource and route. HTTP 405 with an 'Allow' header for unsupported methods. No internal routing details or stack traces are exposed.",
+          "actual_result": "",
+          "status": "Not Executed"
+        },
+        {
+          "test_id": "TC-012",
+          "title": "409 Conflict — creating a duplicate resource returns a conflict error without creating a duplicate",
+          "priority": "High",
+          "type": "Negative",
+          "method": "POST",
+          "endpoint": "/users",
+          "preconditions": ["A user with email 'existing@example.com' already exists"],
+          "headers": {
+            "Authorization": "Bearer <admin_token>",
+            "Content-Type": "application/json"
+          },
+          "request_body": {
+            "email": "existing@example.com",
+            "password": "SecurePass@123",
+            "role": "standard"
+          },
+          "expected_response": {
+            "status_code": 409,
+            "body_contains": ["A user with this email already exists"]
+          },
+          "expected_result": "HTTP 409 Conflict. No duplicate record is created. Error message clearly identifies the conflicting field.",
+          "actual_result": "",
+          "status": "Not Executed"
+        },
+        {
+          "test_id": "TC-013",
+          "title": "500 Internal Server Error — returns a generic error without exposing stack traces or internals",
+          "priority": "Critical",
+          "type": "Negative",
+          "method": "GET",
+          "endpoint": "/reports/generate",
+          "preconditions": ["A reproducible server-side failure condition exists (e.g., DB unavailable)"],
+          "headers": { "Authorization": "Bearer <admin_token>" },
+          "expected_response": {
+            "status_code": 500,
+            "body_must_contain": ["An unexpected error occurred. Please try again later."],
+            "body_must_not_contain": ["stack trace", "SQL", "database connection string", "line number", "file path"]
+          },
+          "expected_result": "HTTP 500 with a generic user-safe error message. No internal details, SQL errors, or stack traces are exposed in the response body.",
+          "actual_result": "",
+          "status": "Not Executed"
+        }
+      ]
+    },
+    {
+      "suite_id": "TS-004",
+      "suite_name": "Rate Limiting",
+      "description": "Verifies that the API enforces rate limits, communicates them via headers, and resets correctly per user and per time window.",
+      "test_cases": [
+        {
+          "test_id": "TC-014",
+          "title": "Rate limit headers are present and decrement correctly on every API response",
+          "priority": "High",
+          "type": "Functional",
+          "method": "GET",
+          "endpoint": "/products",
+          "preconditions": ["User is authenticated", "Rate limiting is enabled on this endpoint"],
+          "steps": [
+            "Send GET /products — inspect response headers",
+            "Send another GET /products — inspect headers again"
+          ],
+          "headers": { "Authorization": "Bearer <valid_token>" },
+          "expected_response": {
+            "status_code": 200,
+            "headers_must_contain": ["X-RateLimit-Limit", "X-RateLimit-Remaining", "X-RateLimit-Reset"],
+            "behavior": "X-RateLimit-Remaining decrements by 1 with each successive request"
+          },
+          "expected_result": "HTTP 200 on both requests. Rate limit headers present on every response. 'X-RateLimit-Remaining' correctly decrements.",
+          "actual_result": "",
+          "status": "Not Executed"
+        },
+        {
+          "test_id": "TC-015",
+          "title": "Exceeding rate limit returns 429 with Retry-After header; access restores after window resets",
+          "priority": "Critical",
+          "type": "Negative",
+          "method": "GET",
+          "endpoint": "/products",
+          "preconditions": [
+            "Rate limit is configured (e.g., 100 requests per 60-second window)",
+            "An automated script or tool can send rapid consecutive requests"
+          ],
+          "steps": [
+            "Send 101 rapid consecutive GET /products requests using the same token",
+            "Observe the 101st response — expect HTTP 429",
+            "Note the 'Retry-After' header value",
+            "Wait for the rate limit window to expire",
+            "Send another request — expect HTTP 200"
+          ],
+          "expected_response": {
+            "status_on_breach": 429,
+            "headers_must_contain": ["Retry-After"],
+            "body_contains": ["Rate limit exceeded. Please try again later."],
+            "status_after_window_reset": 200
+          },
+          "expected_result": "HTTP 429 after the limit is breached with a 'Retry-After' header. All further requests within the window return 429. Access is fully restored after the window resets.",
+          "actual_result": "",
+          "status": "Not Executed"
+        },
+        {
+          "test_id": "TC-016",
+          "title": "Rate limits are enforced independently per user — one user's limit does not affect another",
+          "priority": "High",
+          "type": "Functional",
+          "preconditions": [
+            "User A has exhausted their rate limit",
+            "User B has not made any requests in the current window"
+          ],
+          "steps": [
+            "Exhaust User A's rate limit — confirm 429 is returned",
+            "Simultaneously make a GET /products request as User B — confirm HTTP 200",
+            "Verify User B's rate limit headers show a full remaining count"
+          ],
+          "expected_response": {
+            "user_a": 429,
+            "user_b": 200,
+            "user_b_remaining": "Full limit count (unaffected by User A)"
+          },
+          "expected_result": "User B is completely unaffected by User A's exhausted limit. Rate limiting is scoped per authenticated user, not globally.",
+          "actual_result": "",
+          "status": "Not Executed"
+        }
+      ]
+    },
+    {
+      "suite_id": "TS-005",
+      "suite_name": "Schema Validation",
+      "description": "Verifies that the API enforces required fields, correct data types, field constraints, and returns consistent response schemas on success and failure.",
+      "test_cases": [
+        {
+          "test_id": "TC-017",
+          "title": "API rejects requests with missing required fields and returns field-level validation errors",
+          "priority": "Critical",
+          "type": "Negative",
+          "method": "POST",
+          "endpoint": "/products",
+          "preconditions": ["User is authenticated with Admin role"],
+          "headers": {
+            "Authorization": "Bearer <admin_token>",
+            "Content-Type": "application/json"
+          },
+          "scenarios": [
+            {
+              "label": "Single missing required field (name)",
+              "request_body": { "price": 49.99, "category": "Electronics", "stock": 100 },
+              "expected_status": 422,
+              "expected_error": { "field": "name", "message": "'name' is required" }
+            },
+            {
+              "label": "Multiple missing required fields",
+              "request_body": { "category": "Electronics" },
+              "expected_status": 422,
+              "expected_errors": [
+                { "field": "name", "message": "'name' is required" },
+                { "field": "price", "message": "'price' is required" }
+              ]
+            }
+          ],
+          "expected_result": "HTTP 422 Unprocessable Entity. Response lists each missing field with a specific error message. All errors are returned at once, not one at a time. No partial record is created.",
+          "actual_result": "",
+          "status": "Not Executed"
+        },
+        {
+          "test_id": "TC-018",
+          "title": "API rejects incorrect data types, out-of-range values, and oversized string inputs",
+          "priority": "High",
+          "type": "Negative",
+          "method": "POST",
+          "endpoint": "/products",
+          "preconditions": ["User is authenticated with Admin role"],
+          "headers": {
+            "Authorization": "Bearer <admin_token>",
+            "Content-Type": "application/json"
+          },
+          "scenarios": [
+            {
+              "label": "Wrong type — price as string",
+              "request_body": { "name": "Keyboard", "price": "free", "category": "Electronics", "stock": 100 },
+              "expected_status": 422,
+              "expected_error": { "field": "price", "message": "'price' must be a number" }
+            },
+            {
+              "label": "Out-of-range — negative stock",
+              "request_body": { "name": "Keyboard", "price": 49.99, "category": "Electronics", "stock": -10 },
+              "expected_status": 422,
+              "expected_error": { "field": "stock", "message": "'stock' must be greater than or equal to 0" }
+            },
+            {
+              "label": "String exceeds max length — name over 255 chars",
+              "request_body": { "name": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA", "price": 49.99, "category": "Electronics", "stock": 10 },
+              "expected_status": 422,
+              "expected_error": { "field": "name", "message": "'name' must not exceed 255 characters" }
+            }
+          ],
+          "expected_result": "HTTP 422 for all three scenarios. Each response pinpoints the exact field and specific constraint violated. No record is created in any case.",
+          "actual_result": "",
+          "status": "Not Executed"
+        },
+        {
+          "test_id": "TC-019",
+          "title": "API ignores or rejects unknown/extra fields in the request body (no mass-assignment)",
+          "priority": "High",
+          "type": "Security",
+          "method": "POST",
+          "endpoint": "/products",
+          "preconditions": ["User is authenticated with Admin role"],
+          "headers": {
+            "Authorization": "Bearer <admin_token>",
+            "Content-Type": "application/json"
+          },
+          "request_body": {
+            "name": "Keyboard",
+            "price": 49.99,
+            "category": "Electronics",
+            "stock": 100,
+            "is_admin": true,
+            "internal_cost": 5.00,
+            "unknown_field": "should be ignored"
+          },
+          "expected_response": {
+            "status_code": "201 or 422",
+            "behavior": "Extra fields are silently stripped (201) OR rejected with a validation error (422). Extra fields must never be persisted.",
+            "body_must_not_contain": ["is_admin", "internal_cost", "unknown_field"]
+          },
+          "expected_result": "The API either strips extra fields silently or rejects the request. Under no circumstance are unknown fields stored or used to elevate permissions (mass-assignment protection).",
+          "actual_result": "",
+          "status": "Not Executed"
+        },
+        {
+          "test_id": "TC-020",
+          "title": "Response schema matches the API contract for all successful and error responses",
+          "priority": "Critical",
+          "type": "Functional",
+          "preconditions": [
+            "API contract is defined (e.g., OpenAPI/Swagger spec)",
+            "User is authenticated"
+          ],
+          "scenarios": [
+            {
+              "label": "POST /products success response schema",
+              "method": "POST",
+              "endpoint": "/products",
+              "expected_status": 201,
+              "required_fields": ["id", "name", "price", "category", "stock", "created_at"],
+              "field_types": { "id": "string (UUID)", "price": "number", "stock": "integer", "created_at": "ISO 8601 datetime" }
+            },
+            {
+              "label": "GET /products list response schema",
+              "method": "GET",
+              "endpoint": "/products",
+              "expected_status": 200,
+              "required_fields": ["data", "total", "page", "limit"],
+              "field_types": { "data": "array", "total": "integer", "page": "integer", "limit": "integer" }
+            },
+            {
+              "label": "Consistent error envelope across all failure responses",
+              "method": "GET",
+              "endpoint": "/products/99999999",
+              "expected_status": 404,
+              "required_fields": ["error", "message", "status_code"],
+              "note": "All 4xx and 5xx responses across the entire API must use the same error envelope structure"
+            }
+          ],
+          "expected_result": "All success responses include correct fields with the right data types per the API contract. All error responses share a consistent envelope structure. No undocumented or extra fields appear in any response.",
+          "actual_result": "",
+          "status": "Not Executed"
+        }
+      ]
+    }
+  ]
+}

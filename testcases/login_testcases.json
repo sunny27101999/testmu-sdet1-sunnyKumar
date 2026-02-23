@@ -1,0 +1,505 @@
+{
+  "module": "Login Module",
+  "version": "1.0",
+  "created_by": "QA Engineer",
+  "created_date": "2026-02-23",
+  "total_test_cases": 24,
+  "test_suites": [
+    {
+      "suite_id": "TS-001",
+      "suite_name": "Valid Login",
+      "description": "Test cases to verify successful login scenarios",
+      "test_cases": [
+        {
+          "test_id": "TC-001",
+          "title": "Successful login with valid credentials",
+          "priority": "Critical",
+          "type": "Positive",
+          "preconditions": ["User is registered and active", "User is on the login page"],
+          "steps": [
+            "Navigate to the login page",
+            "Enter a valid registered email address",
+            "Enter the correct password",
+            "Click the 'Login' button"
+          ],
+          "test_data": {
+            "email": "validuser@example.com",
+            "password": "ValidPass@123"
+          },
+          "expected_result": "User is redirected to the dashboard. A valid session token is created.",
+          "actual_result": "",
+          "status": "Not Executed"
+        },
+        {
+          "test_id": "TC-002",
+          "title": "Successful login with username instead of email",
+          "priority": "High",
+          "type": "Positive",
+          "preconditions": ["User is registered and active", "Application supports username login"],
+          "steps": [
+            "Navigate to the login page",
+            "Enter a valid username",
+            "Enter the correct password",
+            "Click the 'Login' button"
+          ],
+          "test_data": {
+            "username": "validuser",
+            "password": "ValidPass@123"
+          },
+          "expected_result": "User is successfully logged in and redirected to the dashboard.",
+          "actual_result": "",
+          "status": "Not Executed"
+        },
+        {
+          "test_id": "TC-003",
+          "title": "Login with email in different cases (case-insensitivity)",
+          "priority": "Medium",
+          "type": "Positive",
+          "preconditions": ["User is registered with email 'validuser@example.com'"],
+          "steps": [
+            "Navigate to the login page",
+            "Enter email as 'VALIDUSER@EXAMPLE.COM'",
+            "Enter the correct password",
+            "Click the 'Login' button"
+          ],
+          "test_data": {
+            "email": "VALIDUSER@EXAMPLE.COM",
+            "password": "ValidPass@123"
+          },
+          "expected_result": "Login is successful; email field is treated as case-insensitive.",
+          "actual_result": "",
+          "status": "Not Executed"
+        },
+        {
+          "test_id": "TC-004",
+          "title": "Login with 'Remember Me' checkbox enabled",
+          "priority": "High",
+          "type": "Positive",
+          "preconditions": ["User is registered and active"],
+          "steps": [
+            "Navigate to the login page",
+            "Enter valid email and password",
+            "Check the 'Remember Me' checkbox",
+            "Click the 'Login' button",
+            "Close the browser and reopen the application"
+          ],
+          "test_data": {
+            "email": "validuser@example.com",
+            "password": "ValidPass@123",
+            "remember_me": true
+          },
+          "expected_result": "User remains logged in after reopening the browser. A persistent cookie is set.",
+          "actual_result": "",
+          "status": "Not Executed"
+        },
+        {
+          "test_id": "TC-005",
+          "title": "Verify redirect to originally requested page after login",
+          "priority": "Medium",
+          "type": "Positive",
+          "preconditions": ["User is not logged in and tries to access a protected page"],
+          "steps": [
+            "Navigate to a protected URL directly (e.g., /dashboard/profile)",
+            "System redirects user to the login page",
+            "Enter valid credentials and click 'Login'"
+          ],
+          "test_data": {
+            "target_url": "/dashboard/profile",
+            "email": "validuser@example.com",
+            "password": "ValidPass@123"
+          },
+          "expected_result": "User is redirected to '/dashboard/profile' after successful login.",
+          "actual_result": "",
+          "status": "Not Executed"
+        }
+      ]
+    },
+    {
+      "suite_id": "TS-002",
+      "suite_name": "Invalid Credentials",
+      "description": "Test cases to verify system behavior on invalid login attempts",
+      "test_cases": [
+        {
+          "test_id": "TC-006",
+          "title": "Login with incorrect password",
+          "priority": "Critical",
+          "type": "Negative",
+          "preconditions": ["User is registered and active", "User is on the login page"],
+          "steps": [
+            "Navigate to the login page",
+            "Enter a valid registered email",
+            "Enter an incorrect password",
+            "Click the 'Login' button"
+          ],
+          "test_data": {
+            "email": "validuser@example.com",
+            "password": "WrongPass@999"
+          },
+          "expected_result": "Login fails. An error message 'Invalid email or password' is displayed. User remains on the login page.",
+          "actual_result": "",
+          "status": "Not Executed"
+        },
+        {
+          "test_id": "TC-007",
+          "title": "Login with unregistered email",
+          "priority": "High",
+          "type": "Negative",
+          "preconditions": ["User is on the login page"],
+          "steps": [
+            "Navigate to the login page",
+            "Enter an email that is not registered",
+            "Enter any password",
+            "Click the 'Login' button"
+          ],
+          "test_data": {
+            "email": "notregistered@example.com",
+            "password": "AnyPassword@1"
+          },
+          "expected_result": "Login fails. Error message displayed: 'Invalid email or password'. System does not reveal whether the email exists.",
+          "actual_result": "",
+          "status": "Not Executed"
+        },
+        {
+          "test_id": "TC-008",
+          "title": "Login with empty email and password fields",
+          "priority": "High",
+          "type": "Negative",
+          "preconditions": ["User is on the login page"],
+          "steps": [
+            "Navigate to the login page",
+            "Leave both email and password fields empty",
+            "Click the 'Login' button"
+          ],
+          "test_data": {
+            "email": "",
+            "password": ""
+          },
+          "expected_result": "Form validation triggers. Error messages shown: 'Email is required' and 'Password is required'.",
+          "actual_result": "",
+          "status": "Not Executed"
+        },
+        {
+          "test_id": "TC-009",
+          "title": "Login with invalid email format",
+          "priority": "Medium",
+          "type": "Negative",
+          "preconditions": ["User is on the login page"],
+          "steps": [
+            "Navigate to the login page",
+            "Enter an invalid email format (e.g., 'userexample.com')",
+            "Enter any password",
+            "Click the 'Login' button"
+          ],
+          "test_data": {
+            "email": "userexample.com",
+            "password": "AnyPassword@1"
+          },
+          "expected_result": "Form validation error: 'Please enter a valid email address'.",
+          "actual_result": "",
+          "status": "Not Executed"
+        },
+        {
+          "test_id": "TC-010",
+          "title": "Login with SQL injection in credentials",
+          "priority": "Critical",
+          "type": "Security",
+          "preconditions": ["User is on the login page"],
+          "steps": [
+            "Navigate to the login page",
+            "Enter SQL injection string in the email field",
+            "Enter any password",
+            "Click the 'Login' button"
+          ],
+          "test_data": {
+            "email": "' OR '1'='1",
+            "password": "' OR '1'='1"
+          },
+          "expected_result": "Login fails. No database error is exposed. System handles the input safely.",
+          "actual_result": "",
+          "status": "Not Executed"
+        },
+        {
+          "test_id": "TC-011",
+          "title": "Login with a disabled/deactivated account",
+          "priority": "High",
+          "type": "Negative",
+          "preconditions": ["A user account exists but has been deactivated by admin"],
+          "steps": [
+            "Navigate to the login page",
+            "Enter the email of the deactivated account",
+            "Enter the correct password",
+            "Click 'Login'"
+          ],
+          "test_data": {
+            "email": "deactivateduser@example.com",
+            "password": "ValidPass@123"
+          },
+          "expected_result": "Login fails. Error message: 'Your account has been deactivated. Please contact support.'",
+          "actual_result": "",
+          "status": "Not Executed"
+        }
+      ]
+    },
+    {
+      "suite_id": "TS-003",
+      "suite_name": "Forgot Password",
+      "description": "Test cases for the password recovery flow",
+      "test_cases": [
+        {
+          "test_id": "TC-012",
+          "title": "Request password reset with a registered email",
+          "priority": "Critical",
+          "type": "Positive",
+          "preconditions": ["User is registered", "User is on the login page"],
+          "steps": [
+            "Click on 'Forgot Password?' link on the login page",
+            "Enter the registered email address",
+            "Click the 'Send Reset Link' button"
+          ],
+          "test_data": {
+            "email": "validuser@example.com"
+          },
+          "expected_result": "Success message: 'A password reset link has been sent to your email.' Email is received within 2 minutes.",
+          "actual_result": "",
+          "status": "Not Executed"
+        },
+        {
+          "test_id": "TC-013",
+          "title": "Request password reset with an unregistered email",
+          "priority": "High",
+          "type": "Negative",
+          "preconditions": ["User is on the Forgot Password page"],
+          "steps": [
+            "Click on 'Forgot Password?' link",
+            "Enter an email that is not registered",
+            "Click the 'Send Reset Link' button"
+          ],
+          "test_data": {
+            "email": "notregistered@example.com"
+          },
+          "expected_result": "Generic success message is shown to prevent user enumeration: 'If this email is registered, a reset link will be sent.' No email is sent.",
+          "actual_result": "",
+          "status": "Not Executed"
+        },
+        {
+          "test_id": "TC-014",
+          "title": "Verify password reset link expiry",
+          "priority": "High",
+          "type": "Negative",
+          "preconditions": ["User has received a password reset email", "Reset link has expired (e.g., after 60 minutes)"],
+          "steps": [
+            "Open the password reset email",
+            "Click on the reset link after it has expired",
+            "Attempt to set a new password"
+          ],
+          "test_data": {
+            "link_expiry_minutes": 60
+          },
+          "expected_result": "Error page is displayed: 'This password reset link has expired. Please request a new one.'",
+          "actual_result": "",
+          "status": "Not Executed"
+        },
+        {
+          "test_id": "TC-015",
+          "title": "Successfully reset password using a valid link",
+          "priority": "Critical",
+          "type": "Positive",
+          "preconditions": ["User has received a valid, unexpired reset link"],
+          "steps": [
+            "Click on the valid reset link from email",
+            "Enter a new valid password",
+            "Confirm the new password",
+            "Click 'Reset Password'",
+            "Login with the new password"
+          ],
+          "test_data": {
+            "new_password": "NewSecurePass@456",
+            "confirm_password": "NewSecurePass@456"
+          },
+          "expected_result": "Password is updated. User can log in successfully with the new password. Old password is no longer valid.",
+          "actual_result": "",
+          "status": "Not Executed"
+        },
+        {
+          "test_id": "TC-016",
+          "title": "Reset password using an already-used reset link",
+          "priority": "High",
+          "type": "Security",
+          "preconditions": ["User has already used the reset link once to change the password"],
+          "steps": [
+            "Copy the used reset link",
+            "Try to open the same link again in the browser"
+          ],
+          "test_data": {},
+          "expected_result": "Error: 'This reset link has already been used and is no longer valid.'",
+          "actual_result": "",
+          "status": "Not Executed"
+        },
+        {
+          "test_id": "TC-017",
+          "title": "Reset password with mismatched passwords",
+          "priority": "Medium",
+          "type": "Negative",
+          "preconditions": ["User is on the Reset Password page with a valid link"],
+          "steps": [
+            "Enter a new password",
+            "Enter a different value in the 'Confirm Password' field",
+            "Click 'Reset Password'"
+          ],
+          "test_data": {
+            "new_password": "NewSecurePass@456",
+            "confirm_password": "DifferentPass@789"
+          },
+          "expected_result": "Validation error: 'Passwords do not match.' Password is not updated.",
+          "actual_result": "",
+          "status": "Not Executed"
+        }
+      ]
+    },
+    {
+      "suite_id": "TS-004",
+      "suite_name": "Session Expiry",
+      "description": "Test cases to verify session management and expiry behavior",
+      "test_cases": [
+        {
+          "test_id": "TC-018",
+          "title": "Session expires after inactivity timeout",
+          "priority": "Critical",
+          "type": "Functional",
+          "preconditions": ["User is logged in", "Session timeout is set to 30 minutes"],
+          "steps": [
+            "Log in successfully",
+            "Leave the application idle for more than 30 minutes",
+            "Attempt to perform any action or navigate to a new page"
+          ],
+          "test_data": {
+            "inactivity_timeout_minutes": 30
+          },
+          "expected_result": "User is automatically logged out and redirected to the login page with message: 'Your session has expired. Please log in again.'",
+          "actual_result": "",
+          "status": "Not Executed"
+        },
+        {
+          "test_id": "TC-019",
+          "title": "Accessing a protected page after session expiry",
+          "priority": "High",
+          "type": "Security",
+          "preconditions": ["User's session has expired"],
+          "steps": [
+            "After session expiry, manually type a protected URL in the browser address bar",
+            "Press Enter"
+          ],
+          "test_data": {
+            "protected_url": "/dashboard/settings"
+          },
+          "expected_result": "User is redirected to the login page. The protected page content is NOT accessible.",
+          "actual_result": "",
+          "status": "Not Executed"
+        },
+        {
+          "test_id": "TC-020",
+          "title": "Session invalidated after explicit logout",
+          "priority": "Critical",
+          "type": "Security",
+          "preconditions": ["User is logged in"],
+          "steps": [
+            "Log in successfully",
+            "Copy the session token from cookies/headers",
+            "Click 'Logout'",
+            "Try to use the copied session token to make an API request to a protected endpoint"
+          ],
+          "test_data": {},
+          "expected_result": "Session token is invalidated server-side. API request returns 401 Unauthorized. The old session cannot be reused.",
+          "actual_result": "",
+          "status": "Not Executed"
+        },
+        {
+          "test_id": "TC-021",
+          "title": "Concurrent session handling (same user, multiple devices)",
+          "priority": "Medium",
+          "type": "Functional",
+          "preconditions": ["User logs in from Device A"],
+          "steps": [
+            "Log in on Device A",
+            "Log in with the same credentials on Device B",
+            "Try to perform an action on Device A"
+          ],
+          "test_data": {
+            "email": "validuser@example.com",
+            "password": "ValidPass@123"
+          },
+          "expected_result": "Depending on policy: Either the session on Device A is terminated (single session policy), or both sessions remain active (multi-session policy). Behavior matches the application's defined policy.",
+          "actual_result": "",
+          "status": "Not Executed"
+        }
+      ]
+    },
+    {
+      "suite_id": "TS-005",
+      "suite_name": "Brute-Force Lockout",
+      "description": "Test cases to verify account lockout protection against brute-force attacks",
+      "test_cases": [
+        {
+          "test_id": "TC-022",
+          "title": "Account locked after maximum failed login attempts",
+          "priority": "Critical",
+          "type": "Security",
+          "preconditions": ["User account is active", "Lockout policy: lock after 5 failed attempts"],
+          "steps": [
+            "Navigate to the login page",
+            "Enter the valid email with an incorrect password",
+            "Repeat step 2 five consecutive times"
+          ],
+          "test_data": {
+            "email": "validuser@example.com",
+            "password_attempts": ["Wrong@1", "Wrong@2", "Wrong@3", "Wrong@4", "Wrong@5"],
+            "max_attempts_before_lockout": 5
+          },
+          "expected_result": "After the 5th failed attempt, the account is locked. Error message: 'Your account has been temporarily locked due to multiple failed login attempts. Try again after 15 minutes or reset your password.'",
+          "actual_result": "",
+          "status": "Not Executed"
+        },
+        {
+          "test_id": "TC-023",
+          "title": "Verify locked account cannot login even with correct password",
+          "priority": "Critical",
+          "type": "Security",
+          "preconditions": ["User account is in a locked state"],
+          "steps": [
+            "Navigate to the login page",
+            "Enter the correct email and correct password of the locked account",
+            "Click the 'Login' button"
+          ],
+          "test_data": {
+            "email": "validuser@example.com",
+            "password": "ValidPass@123"
+          },
+          "expected_result": "Login is denied. Error message displayed about the account being locked. The correct password does not bypass the lockout.",
+          "actual_result": "",
+          "status": "Not Executed"
+        },
+        {
+          "test_id": "TC-024",
+          "title": "Account automatically unlocks after lockout duration expires",
+          "priority": "High",
+          "type": "Functional",
+          "preconditions": ["User account is locked", "Lockout duration is 15 minutes"],
+          "steps": [
+            "Wait for the lockout duration (15 minutes) to expire",
+            "Navigate to the login page",
+            "Enter the correct email and password",
+            "Click 'Login'"
+          ],
+          "test_data": {
+            "email": "validuser@example.com",
+            "password": "ValidPass@123",
+            "lockout_duration_minutes": 15
+          },
+          "expected_result": "After 15 minutes, the account is automatically unlocked. Login succeeds with correct credentials.",
+          "actual_result": "",
+          "status": "Not Executed"
+        },
+      ]
+    }
+  ]
+}
